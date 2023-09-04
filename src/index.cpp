@@ -87,6 +87,7 @@ int main(int argc, char **argv) {
     bytes += s.size();
   }
   printf("total volume %zu bytes\n", bytes);
+  // hashes is *temporary* and does not count in the memory budget
   std::vector<uint64_t> hashes(inputs.size());
   for (size_t i = 0; i < inputs.size(); i++) {
     hashes[i] = simple_hash(inputs[i]);
@@ -117,6 +118,8 @@ int main(int argc, char **argv) {
   size_t filter_volume = binary_fuse16_size_in_bytes(&filter);
   printf("\nfilter memory usage : %zu bytes (%.1f %% of input)\n", filter_volume,
          100.0 * filter_volume / bytes);
+  printf("\nfilter memory usage : %1.f bits/entry\n", 
+         8.0 * filter_volume / hashes.size());
   printf("\n");
 
   std::vector<std::string> query_set_bogus;
