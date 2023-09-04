@@ -76,6 +76,8 @@ int main(int argc, char **argv) {
               << " bytes/name" << std::endl;
   }
   printf("\n");
+  /* We are going to check for duplicates. If you have too many duplicates, something might be wrong. */
+
   std::sort(inputs.begin(), inputs.end());
   auto dup_str = std::adjacent_find(inputs.begin(), inputs.end());
   while (dup_str != inputs.end()) {
@@ -87,6 +89,8 @@ int main(int argc, char **argv) {
     bytes += s.size();
   }
   printf("total volume %zu bytes\n", bytes);
+  /* We are going to test our hash function to make sure that it is sane. */
+
   // hashes is *temporary* and does not count in the memory budget
   std::vector<uint64_t> hashes(inputs.size());
   for (size_t i = 0; i < inputs.size(); i++) {
@@ -103,25 +107,35 @@ int main(int argc, char **argv) {
   printf("ratio of duplicates  hashes %f\n", count / double(hashes.size()));
 
   size_t size = hashes.size();
+  /*******************************
+   * Let us benchmark the filter!
+   ******************************/
+  /**
+   * A filter is a simple data structure that can be easily serialized (e.g., to disk).
+   * https://github.com/FastFilter/xor_singleheader#persistent-usage
+   */
   binary_fuse16_t filter;
-
+  // Memory allocation (trivial):
   bool is_ok = binary_fuse16_allocate(size, &filter);
   if (!is_ok) {
     printf("You probably ran out of memory. Try a smaller size.\n");
     return EXIT_FAILURE;
   }
+  // Construction:
   is_ok = binary_fuse16_populate(hashes.data(), size, &filter);
   if (!is_ok) {
+    // This cannot happen unless there is a bug in the library or you provided a bad input (e.g., all duplicates).
     printf("Construction failed. This should not happen.\n");
-    // do something (you have run out of memory)
+    return EXIT_FAILURE;
   }
+  // Let us check the size of the filter in bytes:
   size_t filter_volume = binary_fuse16_size_in_bytes(&filter);
   printf("\nfilter memory usage : %zu bytes (%.1f %% of input)\n", filter_volume,
          100.0 * filter_volume / bytes);
   printf("\nfilter memory usage : %1.f bits/entry\n", 
          8.0 * filter_volume / hashes.size());
   printf("\n");
-
+  // Let us test the query with bogus strings
   std::vector<std::string> query_set_bogus;
   size_t bogus_volume = 0;
   for (size_t i = 0; i < 100000; i++) {
@@ -154,4 +168,5 @@ int main(int argc, char **argv) {
                  binary_fuse16_populate(hashes.data(), size, &filter);
                }));
   binary_fuse16_free(&filter);
+  return EXIT_SUCCESS;
 }
