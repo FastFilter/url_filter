@@ -13,7 +13,6 @@ Possible output:
 
 ```
 $ ./index data/top-1m.csv 
-Permission denied, xnu/kpc requires root privileges.
 loaded 1000000 names
 average length 23.1128 bytes/name
 
