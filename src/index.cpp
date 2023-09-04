@@ -76,7 +76,8 @@ int main(int argc, char **argv) {
               << " bytes/name" << std::endl;
   }
   printf("\n");
-  /* We are going to check for duplicates. If you have too many duplicates, something might be wrong. */
+  /* We are going to check for duplicates. If you have too many duplicates,
+   * something might be wrong. */
 
   std::sort(inputs.begin(), inputs.end());
   auto dup_str = std::adjacent_find(inputs.begin(), inputs.end());
@@ -111,8 +112,8 @@ int main(int argc, char **argv) {
    * Let us benchmark the filter!
    ******************************/
   /**
-   * A filter is a simple data structure that can be easily serialized (e.g., to disk).
-   * https://github.com/FastFilter/xor_singleheader#persistent-usage
+   * A filter is a simple data structure that can be easily serialized (e.g., to
+   * disk). https://github.com/FastFilter/xor_singleheader#persistent-usage
    */
   binary_fuse16_t filter;
   // Memory allocation (trivial):
@@ -124,15 +125,16 @@ int main(int argc, char **argv) {
   // Construction:
   is_ok = binary_fuse16_populate(hashes.data(), size, &filter);
   if (!is_ok) {
-    // This cannot happen unless there is a bug in the library or you provided a bad input (e.g., all duplicates).
+    // This cannot happen unless there is a bug in the library or you provided a
+    // bad input (e.g., all duplicates).
     printf("Construction failed. This should not happen.\n");
     return EXIT_FAILURE;
   }
   // Let us check the size of the filter in bytes:
   size_t filter_volume = binary_fuse16_size_in_bytes(&filter);
-  printf("\nfilter memory usage : %zu bytes (%.1f %% of input)\n", filter_volume,
-         100.0 * filter_volume / bytes);
-  printf("\nfilter memory usage : %1.f bits/entry\n", 
+  printf("\nfilter memory usage : %zu bytes (%.1f %% of input)\n",
+         filter_volume, 100.0 * filter_volume / bytes);
+  printf("\nfilter memory usage : %1.f bits/entry\n",
          8.0 * filter_volume / hashes.size());
   printf("\n");
   // Let us test the query with bogus strings
@@ -161,12 +163,53 @@ int main(int argc, char **argv) {
                        binary_fuse16_contain(simple_hash(ref), &filter);
                  }
                }));
-  printf("Benchmarking construction speed\n");
+
+  /* Let's check for duplicated hashes */
+  if (argc > 2) {
+    std::ifstream input(argv[2]);
+    uint32_t num_filter_positives = 0, num_strings = 0, matches = 0;
+
+    if (!input) {
+      std::cerr << "Could not open " << argv[2] << std::endl;
+      exit(EXIT_FAILURE);
+    }
+
+    for (std::string line; std::getline(input, line);) {
+      std::string ref = line;
+
+      ref.erase(std::find_if(ref.rbegin(), ref.rend(),
+                             [](unsigned char ch) { return !std::isspace(ch); })
+                    .base(),
+                ref.end());
+
+      num_strings++;
+      bool is_match = std::binary_search(inputs.begin(), inputs.end(), ref);
+      if (is_match) {
+        matches++;
+      }
+
+      if (binary_fuse16_contain(simple_hash(ref), &filter) && !is_match) {
+        num_filter_positives++;
+      }
+    }
+
+    printf("\nnumber of false positives %u [%.4f%%] out of %u\n",
+           num_filter_positives,
+           ((float)num_filter_positives * 100) / (float)num_strings,
+           num_strings);
+    printf("\nnumber of actual positives %u [%.4f%%] out of %u\n", matches,
+           ((float)matches * 100) / (float)num_strings, num_strings);
+  } else {
+    printf("\nno secondary file with strings provided\n");
+  }
+
+  printf("\nBenchmarking construction speed\n");
 
   pretty_print(inputs.size(), bytes, "binary_fuse16_populate",
                bench([&hashes, &filter, &size]() {
                  binary_fuse16_populate(hashes.data(), size, &filter);
                }));
   binary_fuse16_free(&filter);
+
   return EXIT_SUCCESS;
 }
