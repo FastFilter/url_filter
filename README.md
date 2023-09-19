@@ -33,4 +33,6 @@ binary_fuse16_populate         :   1.15 GB/s   49.8 Ma/s  20.09 ns/d
 ```
 
 
-Reference: Thomas Mueller Graf, Daniel Lemire, [Binary Fuse Filters: Fast and Smaller Than Xor Filters](https://arxiv.org/abs/2201.01174), Journal of Experimental Algorithmics 27, 2022
+## Reference
+
+Thomas Mueller Graf, Daniel Lemire, [Binary Fuse Filters: Fast and Smaller Than Xor Filters](https://arxiv.org/abs/2201.01174), Journal of Experimental Algorithmics 27, 2022
