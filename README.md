@@ -31,3 +31,8 @@ binary_fuse16_contain          :   1.42 GB/s   22.4 Ma/s  44.60 ns/d
 Benchmarking construction speed
 binary_fuse16_populate         :   1.15 GB/s   49.8 Ma/s  20.09 ns/d 
 ```
+
+
+## Reference
+
+Thomas Mueller Graf, Daniel Lemire, [Binary Fuse Filters: Fast and Smaller Than Xor Filters](https://arxiv.org/abs/2201.01174), Journal of Experimental Algorithmics 27, 2022
